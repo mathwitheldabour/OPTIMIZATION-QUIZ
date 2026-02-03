@@ -5,7 +5,7 @@ import time
 # --- إعدادات الصفحة ---
 st.set_page_config(page_title="Optimization Quiz | Mr. Ibrahim", layout="wide")
 
-# --- CSS: لمسات جمالية والخطوط ---
+# --- CSS: السحر الحقيقي هنا ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
@@ -15,37 +15,71 @@ st.markdown("""
         font-family: 'Cairo', sans-serif;
     }
 
-    /* تحسين شكل الراديو (الاختيارات) */
-    .stRadio > div {
-        background-color: transparent;
+    /* حيلة العناوين للنص العربي (Header Hack) */
+    /* سنحول h5 إلى حاوية للنص العربي تدعم المعادلات */
+    h5 {
+        direction: rtl;
+        text-align: right;
+        font-family: 'Cairo', sans-serif;
+        font-weight: 700;
+        font-size: 22px !important;
+        color: #2c3e50;
+        line-height: 1.8;
+        padding-right: 15px;
+        border-right: 5px solid #2980b9;
+        margin-bottom: 0px;
     }
+    
+    /* تنسيق النص الإنجليزي */
+    .en-text {
+        text-align: left;
+        direction: ltr;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 18px;
+        color: #555;
+        margin-top: 10px;
+        padding-left: 15px;
+        border-left: 5px solid #c0392b;
+    }
+
+    /* بطاقة السؤال */
+    .question-card {
+        background-color: #fff;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid #eee;
+        margin-bottom: 25px;
+    }
+
+    /* تحسين أزرار الراديو */
     .stRadio label {
         font-size: 20px !important;
-        background-color: #f8f9fa;
-        padding: 15px 20px;
-        border-radius: 10px;
-        margin-bottom: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        border: 1px solid #dee2e6;
-        transition: all 0.3s;
+        background-color: #fcfcfc;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        margin-bottom: 8px;
         cursor: pointer;
+        transition: all 0.2s;
+        display: block; /* جعل الخيار يأخذ السطر كاملاً */
+        direction: ltr; /* الأرقام والوحدات تظهر بشكل أفضل هكذا */
+        text-align: left;
     }
     .stRadio label:hover {
         border-color: #3498db;
         background-color: #ebf5fb;
-        transform: translateX(5px);
     }
 
-    /* صندوق المؤقت */
+    /* المؤقت */
     .timer-box {
-        font-size: 28px; font-weight: 800; text-align: center;
-        padding: 15px; background-color: #fff;
-        border: 3px solid #e74c3c; border-radius: 12px;
-        color: #e74c3c; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);
+        font-size: 26px; font-weight: bold; text-align: center;
+        padding: 12px; border: 3px solid #e74c3c; border-radius: 10px;
+        color: #e74c3c; background: white;
     }
     
-    /* فاصل أنيق */
-    hr { margin: 25px 0; border-color: #eee; }
+    /* إخفاء روابط التثبيت بجوار العناوين */
+    a.anchor-link { display: none; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -63,12 +97,11 @@ def generate_distractors(correct_val, step=1):
 def generate_questions():
     questions = []
     
-    # لاحظ استخدام r"" قبل النصوص التي تحتوي على \ (مثل \sqrt)
-    
     # 1. Open Box
     s_box = random.choice([12, 18, 24, 30])
     ans_box = s_box / 6
     questions.append({
+        # نستخدم النص الخام (raw string) r"" للمعادلات
         "ar": fr"صفيحة مربعة الشكل طول ضلعها {s_box} cm. قُصت مربعات متطابقة من الأركان طول ضلعها $x$. أوجد قيمة $x$ التي تجعل حجم الصندوق $V$ أكبر ما يمكن.",
         "en": fr"A square sheet of side {s_box} cm. Squares of side $x$ are cut from corners. Find $x$ that maximizes the Volume.",
         "correct": ans_box,
@@ -76,7 +109,7 @@ def generate_questions():
         "unit": "cm"
     })
 
-    # 2. Shortest Distance (جذور ومعادلات)
+    # 2. Shortest Distance
     k_val = random.choice([2, 3, 4, 5])
     ans_dist = k_val - 0.5
     questions.append({
@@ -123,7 +156,7 @@ def generate_questions():
 
     return questions
 
-# --- إدارة الحالة (Session State) ---
+# --- إدارة الحالة ---
 if 'quiz_data' not in st.session_state:
     st.session_state.quiz_data = generate_questions()
     st.session_state.user_answers = [None] * 5
@@ -157,7 +190,7 @@ st.title("📝 Optimization & Calculus Quiz")
 st.markdown("---")
 
 if not st.session_state.submitted:
-    # 1. شريط التنقل (Navigation Bar)
+    # 1. شريط التنقل
     cols = st.columns(5)
     for i in range(5):
         done = st.session_state.user_answers[i] is not None
@@ -169,40 +202,27 @@ if not st.session_state.submitted:
             st.session_state.current_q = i
             st.rerun()
 
-    # 2. عرض السؤال الحالي بتصميم البطاقة (Native Container)
+    # 2. عرض السؤال الحالي
     q_idx = st.session_state.current_q
     q_data = st.session_state.quiz_data[q_idx]
 
-    # الحاوية الرئيسية (البطاقة)
-    with st.container(border=True):
+    # --- الحاوية الرئيسية للسؤال ---
+    with st.container():
+        st.markdown('<div class="question-card">', unsafe_allow_html=True)
         
-        # --- الجزء العربي (مع شريط أزرق جانبي) ---
-        c_bar, c_text = st.columns([0.015, 0.985])
-        with c_bar:
-            # الشريط الأزرق العمودي
-            st.markdown("""<div style="height: 100%; width: 5px; background-color: #2980b9; border-radius: 5px;"></div>""", unsafe_allow_html=True)
-        with c_text:
-            # النص العربي مع المعادلات
-            # نستخدم الحرف \u202B لإجبار المتصفح على بدء السطر من اليمين (RTL Embed)
-            st.markdown(f"""
-            <div style="direction: rtl; text-align: right; font-size: 20px; font-weight: bold; color: #2c3e50;">
-            س{q_idx+1}: {q_data['ar']}
-            </div>
-            """, unsafe_allow_html=True)
-            # ملاحظة: إذا لم تظهر المعادلات داخل div، سنستخدم الطريقة القياسية أدناه كبديل
+        # الجزء العربي: نستخدم ##### (h5) الذي قمنا بتعديله في CSS ليدعم RTL والمعادلات
+        st.markdown(f"##### س{q_idx+1}: {q_data['ar']}")
+        
+        # الجزء الإنجليزي: نستخدم HTML div عادي مع كلاس CSS
+        st.markdown(f"""
+        <div class="en-text">
+            <strong>Q{q_idx+1}:</strong> {q_data['en']}
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        st.divider() # خط فاصل
-
-        # --- الجزء الإنجليزي (مع شريط أحمر جانبي) ---
-        c_bar_en, c_text_en = st.columns([0.015, 0.985])
-        with c_bar_en:
-             st.markdown("""<div style="height: 100%; width: 5px; background-color: #c0392b; border-radius: 5px;"></div>""", unsafe_allow_html=True)
-        with c_text_en:
-            st.markdown(f"**Q{q_idx+1}:** {q_data['en']}")
-
-
-    # 3. صندوق الإجابة (The Options)
-    st.markdown("<br>", unsafe_allow_html=True)
+    # 3. الاختيارات
     st.info("👇 Select the correct answer / اختر الإجابة الصحيحة:")
     
     opts = q_data['options']
@@ -219,7 +239,7 @@ if not st.session_state.submitted:
         label_visibility="collapsed"
     )
 
-    # 4. أزرار التحكم
+    # 4. الأزرار
     st.write("")
     c1, c2 = st.columns([1, 4])
     if c1.button("💾 Save Answer", use_container_width=True):
@@ -237,7 +257,7 @@ if not st.session_state.submitted:
         st.rerun()
 
 else:
-    # --- شاشة النتائج ---
+    # --- النتائج ---
     st.balloons()
     score = 0
     st.markdown("""<h2 style="text-align:center; color:#27ae60;">🎉 Quiz Completed!</h2>""", unsafe_allow_html=True)
@@ -255,7 +275,6 @@ else:
         
         status_icon = "✅" if is_correct else "❌"
         
-        # استخدام expander لعرض التفاصيل
         with st.expander(f"Question {i+1}: {status_icon}"):
             st.markdown(f"**Question:** {q['en']}")
             st.markdown(f"**Your Answer:** {user_ans}")
@@ -264,7 +283,7 @@ else:
 
     final = (score/5)*100
     st.markdown(f"""
-    <div style="background:#2c3e50; color:white; padding:30px; border-radius:15px; text-align:center; margin-top:20px; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+    <div style="background:#2c3e50; color:white; padding:30px; border-radius:15px; text-align:center; margin-top:20px;">
         <h1>Final Score</h1>
         <h2 style="font-size: 50px; margin: 10px 0;">{score} / 5</h2>
         <h3>({final}%)</h3>
