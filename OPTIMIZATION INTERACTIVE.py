@@ -5,7 +5,7 @@ import time
 # --- إعدادات الصفحة ---
 st.set_page_config(page_title="Optimization Quiz | Mr. Ibrahim", layout="wide")
 
-# --- CSS: السحر الجمالي والتنسيق ---
+# --- CSS: لمسات جمالية والخطوط ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
@@ -15,61 +15,25 @@ st.markdown("""
         font-family: 'Cairo', sans-serif;
     }
 
-    /* بطاقة السؤال */
-    .question-card {
-        background: linear-gradient(to right, #ffffff, #f9fbfd);
-        padding: 30px;
-        border-radius: 15px;
-        border-top: 6px solid #2980b9; /* شريط علوي ملون */
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        margin-bottom: 25px;
-    }
-
-    /* تنسيق النصوص داخل السؤال */
-    .ar-text {
-        text-align: right; direction: rtl;
-        font-size: 22px; font-weight: 700; color: #2c3e50;
-        margin-bottom: 15px;
-        line-height: 1.6;
-    }
-    .en-text {
-        text-align: left; direction: ltr;
-        font-size: 18px; color: #555;
-        font-family: 'Segoe UI', sans-serif;
-        margin-bottom: 5px;
-        padding-left: 15px;
-        border-left: 4px solid #bdc3c7;
-    }
-
-    /* صندوق الاختيارات (The Options Box) */
-    .options-box {
-        background-color: #eaf2f8; /* خلفية زرقاء فاتحة جداً */
-        border: 2px solid #a9cce3;
-        border-radius: 12px;
-        padding: 20px;
-        margin-top: 10px;
-    }
-    .options-header {
-        font-weight: bold; color: #2980b9; margin-bottom: 10px; font-size: 18px;
-    }
-
     /* تحسين شكل الراديو (الاختيارات) */
     .stRadio > div {
         background-color: transparent;
     }
     .stRadio label {
         font-size: 20px !important;
-        background-color: white;
-        padding: 10px 15px;
-        border-radius: 8px;
-        margin-bottom: 8px;
+        background-color: #f8f9fa;
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 10px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        border: 1px solid #eee;
+        border: 1px solid #dee2e6;
         transition: all 0.3s;
+        cursor: pointer;
     }
     .stRadio label:hover {
         border-color: #3498db;
-        background-color: #fdfdfd;
+        background-color: #ebf5fb;
+        transform: translateX(5px);
     }
 
     /* صندوق المؤقت */
@@ -80,10 +44,8 @@ st.markdown("""
         color: #e74c3c; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);
     }
     
-    /* أزرار التنقل */
-    .nav-btn {
-        width: 100%; border-radius: 8px; font-weight: bold; margin: 2px;
-    }
+    /* فاصل أنيق */
+    hr { margin: 25px 0; border-color: #eee; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -101,23 +63,25 @@ def generate_distractors(correct_val, step=1):
 def generate_questions():
     questions = []
     
-    # 1. Open Box (معادلة تربيعية وتكعيبية)
+    # لاحظ استخدام r"" قبل النصوص التي تحتوي على \ (مثل \sqrt)
+    
+    # 1. Open Box
     s_box = random.choice([12, 18, 24, 30])
     ans_box = s_box / 6
     questions.append({
-        "ar": f"صفيحة مربعة طول ضلعها {s_box} cm. قُصت مربعات من الأركان طول ضلعها $x$. أوجد قيمة $x$ التي تجعل الحجم $V$ أكبر ما يمكن.",
-        "en": f"A square sheet of side {s_box} cm. Squares of side $x$ are cut from corners. Find $x$ that maximizes Volume.",
+        "ar": fr"صفيحة مربعة الشكل طول ضلعها {s_box} cm. قُصت مربعات متطابقة من الأركان طول ضلعها $x$. أوجد قيمة $x$ التي تجعل حجم الصندوق $V$ أكبر ما يمكن.",
+        "en": fr"A square sheet of side {s_box} cm. Squares of side $x$ are cut from corners. Find $x$ that maximizes the Volume.",
         "correct": ans_box,
         "options": generate_distractors(ans_box, 1),
         "unit": "cm"
     })
 
-    # 2. Shortest Distance (جذور)
+    # 2. Shortest Distance (جذور ومعادلات)
     k_val = random.choice([2, 3, 4, 5])
     ans_dist = k_val - 0.5
     questions.append({
-        "ar": f"أوجد الإحداثي السيني $x$ للنقطة الواقعة على المنحنى $y = \\sqrt{{x}}$ والتي تكون أقرب ما يمكن للنقطة $({k_val}, 0)$.",
-        "en": f"Find the x-coordinate on the curve $y = \\sqrt{{x}}$ closest to the point $({k_val}, 0)$.",
+        "ar": fr"أوجد الإحداثي السيني ($x$-coordinate) للنقطة الواقعة على المنحنى $y = \sqrt{{x}}$ والتي تكون أقرب ما يمكن للنقطة $({k_val}, 0)$.",
+        "en": fr"Find the x-coordinate on the curve $y = \sqrt{{x}}$ closest to the point $({k_val}, 0)$.",
         "correct": ans_dist,
         "options": generate_distractors(ans_dist, 0.5),
         "unit": ""
@@ -127,19 +91,19 @@ def generate_questions():
     p_river = random.randrange(800, 1600, 200)
     ans_area = (p_river/4) * (p_river/2)
     questions.append({
-        "ar": f"مزارع لديه {p_river} ft من السياج لإحاطة حقل مستطيل بجوار نهر. أوجد أكبر مساحة ممكنة $A$.",
-        "en": f"Farmer has {p_river} ft of fence next to a river. Find the maximum area.",
+        "ar": fr"مزارع لديه {p_river} ft من السياج لإحاطة حقل مستطيل بجوار نهر (لا يحتاج سياج). أوجد أكبر مساحة ممكنة $A$.",
+        "en": fr"A farmer has {p_river} ft of fence next to a river. Find the maximum area.",
         "correct": ans_area,
         "options": generate_distractors(ans_area, 500),
         "unit": "ft²"
     })
 
-    # 4. Circle Inscribed (هندسة)
+    # 4. Inscribed Rectangle
     r_circle = random.randint(6, 12)
     ans_rect = 2 * (r_circle**2)
     questions.append({
-        "ar": f"أوجد أكبر مساحة لمستطيل يمكن رسمه داخل دائرة نصف قطرها $r = {r_circle}$.",
-        "en": f"Find max area of rectangle inscribed in circle with radius $r = {r_circle}$.",
+        "ar": fr"أوجد أكبر مساحة لمستطيل يمكن رسمه داخل دائرة نصف قطرها $r = {r_circle}$ وحدات.",
+        "en": fr"Find max area of a rectangle inscribed in a circle with radius $r = {r_circle}$.",
         "correct": ans_rect,
         "options": generate_distractors(ans_rect, 10),
         "unit": "units²"
@@ -150,8 +114,8 @@ def generate_questions():
     area = int(1.5 * base_u**2)
     cost = 12 * base_u
     questions.append({
-        "ar": f"يراد تسييج منطقة مساحتها ${area} \\text{{ ft}}^2$. تكلفة الجانبين المتقابلين 3$ والآخرين 2$. أوجد أقل تكلفة.",
-        "en": f"Area is ${area} \\text{{ ft}}^2$. Two sides cost $3, others $2. Find min cost.",
+        "ar": fr"يراد تسييج منطقة مساحتها ${area} \text{{ ft}}^2$. تكلفة الجانبين المتقابلين $3 والآخرين $2. أوجد أقل تكلفة.",
+        "en": fr"Area is ${area} \text{{ ft}}^2$. Two sides cost $3, others $2. Find min cost.",
         "correct": cost,
         "options": generate_distractors(cost, 20),
         "unit": "$"
@@ -159,7 +123,7 @@ def generate_questions():
 
     return questions
 
-# --- إدارة الحالة ---
+# --- إدارة الحالة (Session State) ---
 if 'quiz_data' not in st.session_state:
     st.session_state.quiz_data = generate_questions()
     st.session_state.user_answers = [None] * 5
@@ -200,48 +164,60 @@ if not st.session_state.submitted:
         active = (i == st.session_state.current_q)
         label = f"Q{i+1}"
         if done: label += " ✅"
-        
-        # تلوين الزر بناء على حالته
         type_btn = "primary" if active else "secondary"
         if cols[i].button(label, key=f"nav_{i}", type=type_btn, use_container_width=True):
             st.session_state.current_q = i
             st.rerun()
 
-    # 2. عرض السؤال الحالي
+    # 2. عرض السؤال الحالي بتصميم البطاقة (Native Container)
     q_idx = st.session_state.current_q
     q_data = st.session_state.quiz_data[q_idx]
 
-    # عرض بطاقة السؤال (HTML + LaTeX Rendered by Streamlit Logic)
-    # ملاحظة: نستخدم st.markdown لعرض النصوص مع LaTeX
-    st.markdown(f"""
-    <div class="question-card">
-        <div class="ar-text">س{q_idx+1}: {q_data['ar']}</div>
-        <div class="en-text">Q{q_idx+1}: {q_data['en']}</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # تصحيح عرض المعادلات داخل الـ Markdown (Streamlit يرندر $...$ تلقائياً)
-    # لا حاجة لتدخل إضافي لأن النصوص تحتوي بالفعل على $ للصيغ الرياضية
+    # الحاوية الرئيسية (البطاقة)
+    with st.container(border=True):
+        
+        # --- الجزء العربي (مع شريط أزرق جانبي) ---
+        c_bar, c_text = st.columns([0.015, 0.985])
+        with c_bar:
+            # الشريط الأزرق العمودي
+            st.markdown("""<div style="height: 100%; width: 5px; background-color: #2980b9; border-radius: 5px;"></div>""", unsafe_allow_html=True)
+        with c_text:
+            # النص العربي مع المعادلات
+            # نستخدم الحرف \u202B لإجبار المتصفح على بدء السطر من اليمين (RTL Embed)
+            st.markdown(f"""
+            <div style="direction: rtl; text-align: right; font-size: 20px; font-weight: bold; color: #2c3e50;">
+            س{q_idx+1}: {q_data['ar']}
+            </div>
+            """, unsafe_allow_html=True)
+            # ملاحظة: إذا لم تظهر المعادلات داخل div، سنستخدم الطريقة القياسية أدناه كبديل
 
-    # 3. صندوق الإجابة (The Answer Box)
-    st.markdown('<div class="options-box"><div class="options-header">Select the correct answer / اختر الإجابة الصحيحة:</div>', unsafe_allow_html=True)
+        st.divider() # خط فاصل
+
+        # --- الجزء الإنجليزي (مع شريط أحمر جانبي) ---
+        c_bar_en, c_text_en = st.columns([0.015, 0.985])
+        with c_bar_en:
+             st.markdown("""<div style="height: 100%; width: 5px; background-color: #c0392b; border-radius: 5px;"></div>""", unsafe_allow_html=True)
+        with c_text_en:
+            st.markdown(f"**Q{q_idx+1}:** {q_data['en']}")
+
+
+    # 3. صندوق الإجابة (The Options)
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.info("👇 Select the correct answer / اختر الإجابة الصحيحة:")
     
     opts = q_data['options']
     opts_labels = [f"{o} {q_data['unit']}" for o in opts]
     
-    # الاحتفاظ بالإجابة السابقة
     prev = st.session_state.user_answers[q_idx]
     idx_sel = opts_labels.index(prev) if prev in opts_labels else None
 
-    # عرض الراديو بتون
     choice = st.radio(
-        "Hidden Label", # نخفي العنوان لأننا وضعنا واحداً مخصصاً
+        "Hidden Label",
         opts_labels,
         index=idx_sel,
         key=f"q_{q_idx}",
         label_visibility="collapsed"
     )
-    st.markdown('</div>', unsafe_allow_html=True) # إغلاق صندوق الخيارات
 
     # 4. أزرار التحكم
     st.write("")
@@ -256,7 +232,7 @@ if not st.session_state.submitted:
 
     st.markdown("---")
     if st.button("🚀 Submit Final Quiz", type="primary"):
-        st.session_state.user_answers[q_idx] = choice # حفظ السؤال الحالي قبل التسليم
+        st.session_state.user_answers[q_idx] = choice 
         st.session_state.submitted = True
         st.rerun()
 
@@ -277,9 +253,9 @@ else:
                 is_correct = True
                 score += 1
         
-        status_color = "#d4edda" if is_correct else "#f8d7da"
         status_icon = "✅" if is_correct else "❌"
         
+        # استخدام expander لعرض التفاصيل
         with st.expander(f"Question {i+1}: {status_icon}"):
             st.markdown(f"**Question:** {q['en']}")
             st.markdown(f"**Your Answer:** {user_ans}")
@@ -288,7 +264,9 @@ else:
 
     final = (score/5)*100
     st.markdown(f"""
-    <div style="background:#2c3e50; color:white; padding:20px; border-radius:10px; text-align:center; margin-top:20px;">
-        <h1>Your Score: {score}/5 ({final}%)</h1>
+    <div style="background:#2c3e50; color:white; padding:30px; border-radius:15px; text-align:center; margin-top:20px; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+        <h1>Final Score</h1>
+        <h2 style="font-size: 50px; margin: 10px 0;">{score} / 5</h2>
+        <h3>({final}%)</h3>
     </div>
     """, unsafe_allow_html=True)
