@@ -1,276 +1,255 @@
 import streamlit as st
 import random
+import math
 import time
 
 # --- إعدادات الصفحة ---
-st.set_page_config(page_title="Optimization Quiz | Mr. Ibrahim", layout="wide")
+st.set_page_config(page_title="Optimization MCQ Quiz", layout="wide")
 
-# --- CSS لتجميل التصميم وتنسيق الاتجاهات ---
+# --- CSS للتجميل وتنسيق الأسئلة ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-    
     * { font-family: 'Cairo', sans-serif; }
     
-    .stButton button {
-        width: 100%;
-        border-radius: 5px;
-        font-weight: bold;
-    }
-    
-    /* تنسيق السؤال */
     .question-card {
-        background-color: #f8f9fa;
-        padding: 20px;
-        border-radius: 10px;
-        border-right: 5px solid #2980b9; /* لون مميز للعربي */
-        border-left: 5px solid #c0392b; /* لون مميز للإنجليزي */
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        background-color: #ffffff;
+        padding: 25px;
+        border-radius: 12px;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         margin-bottom: 20px;
     }
-    
     .ar-text {
-        text-align: right;
-        direction: rtl;
-        font-size: 20px;
-        font-weight: bold;
-        color: #2c3e50;
-        margin-bottom: 15px;
+        text-align: right; direction: rtl; font-size: 20px; font-weight: bold;
+        color: #2c3e50; margin-bottom: 10px; border-right: 5px solid #3498db; padding-right: 15px;
     }
-    
     .en-text {
-        text-align: left;
-        direction: ltr;
-        font-size: 18px;
-        font-family: 'Segoe UI', sans-serif;
-        color: #555;
-        margin-bottom: 10px;
+        text-align: left; direction: ltr; font-size: 18px; color: #555;
+        font-family: 'Segoe UI', sans-serif; margin-bottom: 20px; border-left: 5px solid #e74c3c; padding-left: 15px;
     }
-
-    .nav-active {
-        background-color: #27ae60 !important;
-        color: white !important;
-    }
-    
     .timer-box {
-        font-size: 24px;
-        font-weight: bold;
-        text-align: center;
-        padding: 10px;
-        border: 2px solid #e74c3c;
-        border-radius: 10px;
-        color: #e74c3c;
-        margin-bottom: 20px;
+        font-size: 24px; font-weight: bold; text-align: center;
+        padding: 10px; border: 2px solid #e74c3c; border-radius: 10px; color: #e74c3c;
     }
+    /* تنسيق خيارات الراديو لتكون أكبر وأوضح */
+    .stRadio label { font-size: 18px !important; padding: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- دوال توليد الأسئلة (تغيير الأرقام تلقائياً) ---
+# --- دوال مساعدة للحسابات وتوليد المشتتات ---
+def generate_distractors(correct_val, step=1):
+    """توليد خيارات خاطئة قريبة من الإجابة الصحيحة"""
+    options = {correct_val}
+    while len(options) < 4:
+        # توليد قيم خاطئة بضرب أو جمع بسيط لتبدو منطقية
+        fake = correct_val + random.choice([-step, step, step*2, -step*2])
+        if fake > 0: # نتجنب القيم السالبة في الأبعاد
+            options.add(round(fake, 2))
+    
+    final_opts = list(options)
+    random.shuffle(final_opts)
+    return final_opts
+
+# --- مولد الأسئلة الذكي ---
 def generate_questions():
     questions = []
     
-    # س1: سياج النهر (River Fence)
-    # 2x + y = P, Max Area
-    p_river = random.randrange(800, 2000, 100) # رقم عشوائي للمحيط
-    ans_river = (p_river / 4) * (p_river / 2) # المساحة القصوى
+    # 1. الصندوق المفتوح (Open Box) - Max Volume
+    # Sheet side = S (Square). Cut x. V = x(S-2x)^2.
+    # Critical point x = S/6.
+    # نختار S يقبل القسمة على 6 لسهولة الأرقام
+    s_box = random.choice([12, 18, 24, 30, 36])
+    ans_box_x = s_box / 6
     questions.append({
-        "type": "River",
-        "ar": f"مزارع لديه {p_river} قدم من السياج ويريد إحاطة حقل مستطيل يحده من أحد الجوانب نهر (لا يحتاج سياج). أوجد أكبر مساحة ممكنة لهذا الحقل.",
-        "en": f"A farmer has {p_river} ft of fence and wants to enclose a rectangular field bounded by a river on one side. Find the maximum possible area.",
-        "correct": round(ans_river, 2),
-        "unit": "ft²"
+        "type": "Open Box",
+        "ar": f"صفيحة مربعة الشكل طول ضلعها {s_box} سم. يراد صنع صندوق مفتوح من الأعلى بقص مربعات متطابقة طول ضلعها (x) من الأركان وثني الجوانب. أوجد قيمة x التي تجعل حجم الصندوق أكبر ما يمكن.",
+        "en": f"A square sheet of side {s_box} cm is to be made into an open-top box by cutting equal squares of side (x) from the corners and folding up the flaps. Find x that maximizes the volume.",
+        "options": generate_distractors(ans_box_x, step=1),
+        "correct": ans_box_x,
+        "unit": "cm"
     })
 
-    # س2: مجموع وضرب (Numbers)
-    # x + y = S, Max x*y
-    s_num = random.randrange(20, 100, 2)
-    ans_num = (s_num / 2) * (s_num / 2)
+    # 2. أقصر مسافة (Shortest Distance) - Point to Curve
+    # Point (k, 0) to curve y = sqrt(x).
+    # Distance squared D^2 = (x-k)^2 + x.
+    # Derivative: 2(x-k) + 1 = 0 => 2x - 2k + 1 = 0 => x = k - 0.5.
+    k_val = random.choice([2, 3, 4, 5, 6]) # نختار أرقام صحيحة
+    ans_dist_x = k_val - 0.5
     questions.append({
-        "type": "Numbers",
-        "ar": f"أوجد عددين موجبين مجموعهما {s_num} وحاصل ضربهما أكبر ما يمكن. ما هو حاصل الضرب الأكبر؟",
-        "en": f"Find two positive numbers whose sum is {s_num} and whose product is a maximum. What is the maximum product?",
-        "correct": round(ans_num, 2),
+        "type": "Shortest Distance",
+        "ar": f"أوجد الإحداثي السيني (x-coordinate) للنقطة الواقعة على المنحنى $y = \\sqrt{{x}}$ والتي تكون أقرب ما يمكن للنقطة ({k_val}, 0).",
+        "en": f"Find the x-coordinate of the point on the curve $y = \\sqrt{{x}}$ that is closest to the point ({k_val}, 0).",
+        "options": generate_distractors(ans_dist_x, step=0.5),
+        "correct": ans_dist_x,
         "unit": ""
     })
 
-    # س3: تكلفة السياج (Fence Cost)
-    # Area = A, Cost1 = $3, Cost2 = $2. Min Cost.
-    area_cost = random.choice([600, 1200, 2400, 5400]) # مساحات تعطي أرقاماً لطيفة
-    # Dimensions for min cost: ratio implies sides related to sqrt(cost)
-    # Simplified logic: C = 2*3*x + 2*2*y. xy=A. 
-    # Min Cost happens when Cost_x = Cost_y => 6x = 4y => y = 1.5x
-    # x(1.5x) = A => x = sqrt(A/1.5).
-    # Total Cost = 6x + 4(1.5x) = 12x.
-    import math
-    x_val = math.sqrt(area_cost / 1.5)
-    min_cost = 12 * x_val
+    # 3. سياج النهر (River Fence) - Max Area
+    # 2x + y = P. Max Area => x = P/4, y = P/2.
+    p_river = random.randrange(800, 2000, 200)
+    ans_river_area = (p_river / 4) * (p_river / 2)
     questions.append({
-        "type": "Cost",
-        "ar": f"يراد تسييج منطقة مستطيلة مساحتها {area_cost} قدم مربع. تكلفة السياج للجانبين المتقابلين 3$ للقدم، وللجانبين الآخرين 2$ للقدم. أوجد أقل تكلفة ممكنة للسياج.",
-        "en": f"A rectangular area of {area_cost} ft² is to be fenced. Two opposite sides cost $3/ft, and the other two cost $2/ft. Find the minimum cost.",
-        "correct": round(min_cost, 2),
+        "type": "River Fence",
+        "ar": f"مزارع لديه {p_river} قدم من السياج لإحاطة حقل مستطيل بجوار نهر (لا يحتاج سياج). أوجد أكبر مساحة ممكنة.",
+        "en": f"A farmer has {p_river} ft of fencing to enclose a rectangular field next to a river. Find the maximum area.",
+        "options": generate_distractors(ans_river_area, step=p_river*10),
+        "correct": ans_river_area,
+        "unit": "ft²"
+    })
+
+    # 4. مستطيل داخل دائرة (Inscribed Rectangle)
+    # Radius R. Max Area Square side = R*sqrt(2). Area = 2R^2.
+    r_circle = random.randint(5, 12)
+    ans_rect_area = 2 * (r_circle ** 2)
+    questions.append({
+        "type": "Inscribed Rect",
+        "ar": f"أوجد أكبر مساحة لمستطيل يمكن رسمه داخل دائرة نصف قطرها {r_circle} وحدات.",
+        "en": f"Find the maximum area of a rectangle inscribed in a circle of radius {r_circle}.",
+        "options": generate_distractors(ans_rect_area, step=10),
+        "correct": ans_rect_area,
+        "unit": "sq units"
+    })
+
+    # 5. تكلفة (Minimum Cost)
+    # Area A. Cost: 3$ (2 sides), 2$ (2 sides). Min Cost = 12 * sqrt(A/1.5).
+    # نختار A بحيث يكون الجذر مربع كامل لسهولة الأرقام: A = 1.5 * k^2
+    k_cost = random.choice([10, 20, 30]) 
+    area_cost = int(1.5 * (k_cost**2))
+    ans_min_cost = 12 * k_cost
+    questions.append({
+        "type": "Min Cost",
+        "ar": f"يراد تسييج منطقة مساحتها {area_cost} قدم مربع. سياج الجانبين المتقابلين 3$/قدم، والآخرين 2$/قدم. أوجد أقل تكلفة.",
+        "en": f"Area {area_cost} ft². Two opposite sides cost $3/ft, others $2/ft. Find minimum cost.",
+        "options": generate_distractors(ans_min_cost, step=50),
+        "correct": ans_min_cost,
         "unit": "$"
-    })
-
-    # س4: مستطيل داخل دائرة (Inscribed Rect)
-    # Radius = R. Max Area = 2R^2
-    radius = random.randint(5, 20)
-    max_area_circle = 2 * (radius ** 2)
-    questions.append({
-        "type": "Geometry",
-        "ar": f"أوجد أكبر مساحة لمستطيل يمكن رسمه داخل دائرة نصف قطرها {radius} سم.",
-        "en": f"Find the maximum area of a rectangle that can be inscribed in a circle of radius {radius} cm.",
-        "correct": round(max_area_circle, 2),
-        "unit": "cm²"
-    })
-
-    # س5: سلك يقطع (Wire Cut) - نسخة مبسطة (مجموع المساحات أقل ما يمكن)
-    # L = length. Min Area occurs at x = (pi * L) / (pi + 4) for circle circumference
-    # But usually asking for length used for circle.
-    l_wire = random.choice([10, 20, 100])
-    # Min area answer (Length for circle)
-    ans_wire = (math.pi * l_wire) / (math.pi + 4)
-    questions.append({
-        "type": "Wire",
-        "ar": f"سلك طوله {l_wire} م تم قطعه لتكوين دائرة ومربع. كم يجب أن يكون طول الجزء المستخدم للدائرة لتكون المساحة الكلية **أقل ما يمكن**؟ (قرّب لأقرب منزلتين)",
-        "en": f"A wire of length {l_wire} m is cut to form a circle and a square. How much wire should be used for the circle to **minimize** the total area? (Round to 2 decimals)",
-        "correct": round(ans_wire, 2),
-        "unit": "m"
     })
 
     return questions
 
-# --- إدارة الجلسة (Session State) ---
+# --- إدارة الحالة (Session State) ---
 if 'quiz_data' not in st.session_state:
     st.session_state.quiz_data = generate_questions()
-    st.session_state.user_answers = [None] * 5 # لتخزين إجابات الطالب
+    st.session_state.user_answers = [None] * 5
     st.session_state.current_q = 0
     st.session_state.start_time = time.time()
     st.session_state.quiz_submitted = False
 
-# --- المنطق الزمني (Timer Logic) ---
-QUIZ_DURATION = 15 * 60 # 15 دقيقة بالثواني
-elapsed_time = time.time() - st.session_state.start_time
-time_left = QUIZ_DURATION - elapsed_time
+# --- المؤقت ---
+QUIZ_DURATION = 15 * 60
+elapsed = time.time() - st.session_state.start_time
+time_left = max(0, QUIZ_DURATION - elapsed)
 
-if time_left <= 0:
+if time_left == 0 and not st.session_state.quiz_submitted:
     st.session_state.quiz_submitted = True
-    time_left = 0
+    st.rerun()
 
-# --- الشريط الجانبي (المعلومات والمؤقت) ---
+# --- Sidebar ---
 with st.sidebar:
-    st.header("⏳ Quiz Info")
-    
-    # عرض المؤقت
+    st.header("⏳ Quiz Timer")
     mins, secs = divmod(int(time_left), 60)
-    timer_color = "red" if time_left < 60 else "#2c3e50"
-    st.markdown(f'<div class="timer-box" style="color:{timer_color}">{mins:02d}:{secs:02d}</div>', unsafe_allow_html=True)
-    
-    st.write(f"**Student:** Guest Student")
-    st.write("**Subject:** Calculus (Optimization)")
-    st.write("**Instructor:** Mr. Ibrahim Eldabour")
-    
-    if st.button("🔄 Restart Quiz (توليد أسئلة جديدة)"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
+    color = "red" if time_left < 60 else "#2c3e50"
+    st.markdown(f'<div class="timer-box" style="color:{color}">{mins:02d}:{secs:02d}</div>', unsafe_allow_html=True)
+    st.markdown("---")
+    st.write("**Mr. Ibrahim Eldabour**")
+    if st.button("🔄 New Quiz / اختبار جديد"):
+        for key in list(st.session_state.keys()): del st.session_state[key]
         st.rerun()
 
-# --- الجسم الرئيسي (Header & Navigation) ---
-st.title("📝 اختبار القيم القصوى (Optimization Quiz)")
+# --- Main App ---
+st.title("📝 Optimization MCQ Quiz")
 st.markdown("---")
 
 if not st.session_state.quiz_submitted:
-    # أزرار التنقل في الأعلى
+    # Navigation Buttons
     cols = st.columns(5)
     for i in range(5):
-        # تمييز الزر النشط (السؤال الحالي) وتلوين الأزرار المجابة
-        btn_label = f"Q {i+1}"
-        is_answered = st.session_state.user_answers[i] is not None
-        if i == st.session_state.current_q:
-            cols[i].markdown(f"<button style='background-color:#2980b9; color:white; border:none; padding:10px; width:100%; border-radius:5px;'>{btn_label}</button>", unsafe_allow_html=True)
-        elif is_answered:
-            if cols[i].button(f"✅ {btn_label}", key=f"nav_{i}"):
-                st.session_state.current_q = i
-                st.rerun()
-        else:
-            if cols[i].button(btn_label, key=f"nav_{i}"):
-                st.session_state.current_q = i
-                st.rerun()
+        label = f"Q{i+1}"
+        style = "background-color:#2980b9; color:white;" if i == st.session_state.current_q else ""
+        if st.session_state.user_answers[i] is not None: label += " ✅"
+        if cols[i].button(label, key=f"nav_{i}"):
+            st.session_state.current_q = i
+            st.rerun()
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    # Display Question
+    q_idx = st.session_state.current_q
+    q_data = st.session_state.quiz_data[q_idx]
 
-    # --- عرض السؤال الحالي ---
-    q_index = st.session_state.current_q
-    q_data = st.session_state.quiz_data[q_index]
-
-    # بطاقة السؤال
     st.markdown(f"""
     <div class="question-card">
-        <div class="ar-text">س{q_index+1}: {q_data['ar']}</div>
-        <hr>
-        <div class="en-text">Q{q_index+1}: {q_data['en']}</div>
+        <div class="ar-text">س{q_idx+1}: {q_data['ar']}</div>
+        <div class="en-text">Q{q_idx+1}: {q_data['en']}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # حقل الإدخال
-    # نستخدم قيمة افتراضية محفوظة إذا كان الطالب قد أجاب سابقاً
-    prev_ans = st.session_state.user_answers[q_index]
-    val = prev_ans if prev_ans is not None else 0.0
+    # MCQ Logic
+    options = q_data['options']
+    # نحتاج تحويل الخيارات لنصوص للعرض
+    options_str = [f"{opt} {q_data['unit']}" for opt in options]
     
-    user_input = st.number_input(
-        f"Enter Answer / أدخل الإجابة ({q_data['unit']}):", 
-        value=float(val), 
-        step=0.1, 
-        format="%.2f",
-        key=f"input_{q_index}"
+    # استرجاع الإجابة السابقة إن وجدت
+    previous_selection = st.session_state.user_answers[q_idx]
+    
+    # عرض الراديو
+    choice = st.radio(
+        "Select the correct answer / اختر الإجابة الصحيحة:",
+        options_str,
+        index=options_str.index(previous_selection) if previous_selection in options_str else None,
+        key=f"radio_{q_idx}"
     )
 
-    # زر حفظ الإجابة والانتقال
-    col_prev, col_next = st.columns([1, 1])
-    
-    if col_next.button("Save & Next ➡️"):
-        st.session_state.user_answers[q_index] = user_input
-        if q_index < 4:
+    # أزرار التحكم
+    c1, c2 = st.columns([1, 4])
+    if c1.button("Save 💾"):
+        st.session_state.user_answers[q_idx] = choice
+        if q_idx < 4:
             st.session_state.current_q += 1
-        st.rerun()
-
-    # زر الإنهاء
+            st.rerun()
+        else:
+            st.success("Saved! Review or Submit.")
+    
     st.markdown("---")
-    if st.button("📤 Submit Quiz / تسليم الاختبار", type="primary"):
-        # حفظ الإجابة الحالية أولاً
-        st.session_state.user_answers[q_index] = user_input
+    if st.button("📤 Submit Final / تسليم نهائي", type="primary"):
+        st.session_state.user_answers[q_idx] = choice # Save current before submit
         st.session_state.quiz_submitted = True
         st.rerun()
 
 else:
-    # --- شاشة النتائج (بعد التسليم أو انتهاء الوقت) ---
-    st.success("تم تسليم الاختبار بنجاح! | Quiz Submitted Successfully")
-    
+    # --- صفحة النتائج ---
+    st.balloons()
     score = 0
-    st.write("### تقرير النتيجة:")
+    st.write("### 📊 Quiz Results / نتائج الاختبار")
     
     for i, q in enumerate(st.session_state.quiz_data):
-        user_ans = st.session_state.user_answers[i]
-        correct_ans = q['correct']
+        user_choice_str = st.session_state.user_answers[i]
+        correct_val = q['correct']
         
-        # السماح بنسبة خطأ بسيطة في التقريب (Tolerance)
+        # استخراج الرقم من نص اختيار الطالب للمقارنة
         is_correct = False
-        if user_ans is not None:
-            if abs(user_ans - correct_ans) <= 0.2: # هامش خطأ بسيط
-                score += 1
-                is_correct = True
+        if user_choice_str:
+            # نحاول استخراج الرقم من النص (مثلا "250.0 ft" -> 250.0)
+            try:
+                user_val = float(user_choice_str.split()[0])
+                if abs(user_val - correct_val) < 0.1:
+                    is_correct = True
+                    score += 1
+            except:
+                pass
         
-        # عرض حالة السؤال (بدون الإجابة الصحيحة)
-        status = "✅ Correct" if is_correct else "❌ Incorrect"
-        st.markdown(f"**Question {i+1}:** {status}")
+        status = "✅ Correct" if is_correct else "❌ Wrong"
+        with st.expander(f"Question {i+1}: {status}"):
+            st.write(q['en'])
+            st.write(f"**Your Answer:** {user_choice_str}")
+            if not is_correct:
+                st.write(f"**Correct Answer:** {correct_val} {q['unit']}")
+
+    final_score = (score / 5) * 100
+    color = "#d4edda" if final_score >= 60 else "#f8d7da"
+    text_color = "#155724" if final_score >= 60 else "#721c24"
     
-    final_grade = (score / 5) * 100
     st.markdown(f"""
-    <div style="background-color:#d4edda; padding:20px; border-radius:10px; text-align:center; border:2px solid #28a745;">
-        <h1 style="color:#155724; margin:0;">Your Score: {score} / 5</h1>
-        <h3 style="color:#155724;">Grade: {final_grade}%</h3>
+    <div style="background-color:{color}; padding:20px; border-radius:10px; text-align:center; margin-top:20px;">
+        <h2 style="color:{text_color};">Final Grade: {score} / 5 ({final_score}%)</h2>
     </div>
     """, unsafe_allow_html=True)
-    
-    if final_grade == 100:
-        st.balloons()
