@@ -1,195 +1,276 @@
 import streamlit as st
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import numpy as np
+import random
+import time
 
 # --- إعدادات الصفحة ---
-st.set_page_config(page_title="Optimization Problems", layout="wide")
+st.set_page_config(page_title="Optimization Quiz | Mr. Ibrahim", layout="wide")
 
-# --- CSS مخصص للطباعة وتنسيق النصوص ---
+# --- CSS لتجميل التصميم وتنسيق الاتجاهات ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
     
-    html, body, [class*="css"] {
-        font-family: 'Cairo', sans-serif;
+    * { font-family: 'Cairo', sans-serif; }
+    
+    .stButton button {
+        width: 100%;
+        border-radius: 5px;
+        font-weight: bold;
     }
     
-    .question-container {
-        border: 2px solid #2980b9;
+    /* تنسيق السؤال */
+    .question-card {
+        background-color: #f8f9fa;
         padding: 20px;
         border-radius: 10px;
-        background-color: #fdfdfd;
+        border-right: 5px solid #2980b9; /* لون مميز للعربي */
+        border-left: 5px solid #c0392b; /* لون مميز للإنجليزي */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         margin-bottom: 20px;
     }
+    
     .ar-text {
         text-align: right;
         direction: rtl;
         font-size: 20px;
         font-weight: bold;
         color: #2c3e50;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
     }
+    
     .en-text {
         text-align: left;
         direction: ltr;
         font-size: 18px;
-        color: #34495e;
-        margin-bottom: 10px;
         font-family: 'Segoe UI', sans-serif;
+        color: #555;
+        margin-bottom: 10px;
+    }
+
+    .nav-active {
+        background-color: #27ae60 !important;
+        color: white !important;
     }
     
-    /* إخفاء العناصر غير المرغوبة عند الطباعة */
-    @media print {
-        [data-testid="stSidebar"] { display: none; }
-        .stButton { display: none; }
-        header { display: none; }
-        footer { display: none; }
-        .block-container { padding-top: 0 !important; }
-        .question-container { border: 2px solid #000; }
+    .timer-box {
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        padding: 10px;
+        border: 2px solid #e74c3c;
+        border-radius: 10px;
+        color: #e74c3c;
+        margin-bottom: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- البيانات (الأسئلة) ---
-questions = {
-    "Q3: Rectangular Field & Stream": {
-        "ar": "3. حقل مستطيل الشكل سيتم إحاطته بسياج من ثلاثة جوانب، وجانب رابع يقع على طول مجرى مائي مستقيم. أوجد أبعاد الحقل التي تعطي أكبر مساحة ممكنة باستخدام سياج طوله 1000 قدم.",
-        "en": "3. A rectangular field is to be bounded by a fence on three sides and by a straight stream on the fourth side. Find the dimensions of the field with maximum area using 1000 ft of fence.",
-        "type": "river_rect",
-        "constraint": 1000,
-        "answer": "Dimensions: 250 ft × 500 ft | Max Area: 125,000 ft²"
-    },
-    "Q9: Rectangle in Circle": {
-        "ar": "9. أوجد أبعاد المستطيل ذو أكبر مساحة ممكنة والذي يمكن رسمه داخل دائرة نصف قطرها 10 وحدات.",
-        "en": "9. Find the dimensions of the rectangle with maximum area that can be inscribed in a circle of radius 10.",
-        "type": "rect_in_circle",
-        "constraint": 10,
-        "answer": "Dimensions: 10√2 × 10√2 (Square) | Max Area: 200"
-    },
-    "Q14: Wire Cut (Circle & Square)": {
-        "ar": "14. سلك طوله 12 إنش، يمكن ثنيه ليشكل دائرة ومربعاً. كم يجب أن يكون طول السلك المستخدم للدائرة لتكون المساحة الكلية (a) أكبر ما يمكن؟",
-        "en": "14. A wire of length 12 in is cut to make a circle and a square. How much wire for the circle for (a) Maximum total area?",
-        "type": "wire_cut",
-        "constraint": 12,
-        "answer": "Use all 12 inches for the circle (x = 12, Square side = 0)"
-    }
-}
+# --- دوال توليد الأسئلة (تغيير الأرقام تلقائياً) ---
+def generate_questions():
+    questions = []
+    
+    # س1: سياج النهر (River Fence)
+    # 2x + y = P, Max Area
+    p_river = random.randrange(800, 2000, 100) # رقم عشوائي للمحيط
+    ans_river = (p_river / 4) * (p_river / 2) # المساحة القصوى
+    questions.append({
+        "type": "River",
+        "ar": f"مزارع لديه {p_river} قدم من السياج ويريد إحاطة حقل مستطيل يحده من أحد الجوانب نهر (لا يحتاج سياج). أوجد أكبر مساحة ممكنة لهذا الحقل.",
+        "en": f"A farmer has {p_river} ft of fence and wants to enclose a rectangular field bounded by a river on one side. Find the maximum possible area.",
+        "correct": round(ans_river, 2),
+        "unit": "ft²"
+    })
 
-# --- القائمة الجانبية ---
-st.sidebar.title("🧮 Optimization Problems")
-st.sidebar.markdown("Mr. Ibrahim Eldabour")
-selected_q = st.sidebar.selectbox("Select Question", list(questions.keys()))
-data = questions[selected_q]
+    # س2: مجموع وضرب (Numbers)
+    # x + y = S, Max x*y
+    s_num = random.randrange(20, 100, 2)
+    ans_num = (s_num / 2) * (s_num / 2)
+    questions.append({
+        "type": "Numbers",
+        "ar": f"أوجد عددين موجبين مجموعهما {s_num} وحاصل ضربهما أكبر ما يمكن. ما هو حاصل الضرب الأكبر؟",
+        "en": f"Find two positive numbers whose sum is {s_num} and whose product is a maximum. What is the maximum product?",
+        "correct": round(ans_num, 2),
+        "unit": ""
+    })
 
-# --- العنوان ---
-st.markdown("<h2 style='text-align: center; color: #d35400;'>تطبيقات القيم القصوى (Optimization)</h2>", unsafe_allow_html=True)
+    # س3: تكلفة السياج (Fence Cost)
+    # Area = A, Cost1 = $3, Cost2 = $2. Min Cost.
+    area_cost = random.choice([600, 1200, 2400, 5400]) # مساحات تعطي أرقاماً لطيفة
+    # Dimensions for min cost: ratio implies sides related to sqrt(cost)
+    # Simplified logic: C = 2*3*x + 2*2*y. xy=A. 
+    # Min Cost happens when Cost_x = Cost_y => 6x = 4y => y = 1.5x
+    # x(1.5x) = A => x = sqrt(A/1.5).
+    # Total Cost = 6x + 4(1.5x) = 12x.
+    import math
+    x_val = math.sqrt(area_cost / 1.5)
+    min_cost = 12 * x_val
+    questions.append({
+        "type": "Cost",
+        "ar": f"يراد تسييج منطقة مستطيلة مساحتها {area_cost} قدم مربع. تكلفة السياج للجانبين المتقابلين 3$ للقدم، وللجانبين الآخرين 2$ للقدم. أوجد أقل تكلفة ممكنة للسياج.",
+        "en": f"A rectangular area of {area_cost} ft² is to be fenced. Two opposite sides cost $3/ft, and the other two cost $2/ft. Find the minimum cost.",
+        "correct": round(min_cost, 2),
+        "unit": "$"
+    })
+
+    # س4: مستطيل داخل دائرة (Inscribed Rect)
+    # Radius = R. Max Area = 2R^2
+    radius = random.randint(5, 20)
+    max_area_circle = 2 * (radius ** 2)
+    questions.append({
+        "type": "Geometry",
+        "ar": f"أوجد أكبر مساحة لمستطيل يمكن رسمه داخل دائرة نصف قطرها {radius} سم.",
+        "en": f"Find the maximum area of a rectangle that can be inscribed in a circle of radius {radius} cm.",
+        "correct": round(max_area_circle, 2),
+        "unit": "cm²"
+    })
+
+    # س5: سلك يقطع (Wire Cut) - نسخة مبسطة (مجموع المساحات أقل ما يمكن)
+    # L = length. Min Area occurs at x = (pi * L) / (pi + 4) for circle circumference
+    # But usually asking for length used for circle.
+    l_wire = random.choice([10, 20, 100])
+    # Min area answer (Length for circle)
+    ans_wire = (math.pi * l_wire) / (math.pi + 4)
+    questions.append({
+        "type": "Wire",
+        "ar": f"سلك طوله {l_wire} م تم قطعه لتكوين دائرة ومربع. كم يجب أن يكون طول الجزء المستخدم للدائرة لتكون المساحة الكلية **أقل ما يمكن**؟ (قرّب لأقرب منزلتين)",
+        "en": f"A wire of length {l_wire} m is cut to form a circle and a square. How much wire should be used for the circle to **minimize** the total area? (Round to 2 decimals)",
+        "correct": round(ans_wire, 2),
+        "unit": "m"
+    })
+
+    return questions
+
+# --- إدارة الجلسة (Session State) ---
+if 'quiz_data' not in st.session_state:
+    st.session_state.quiz_data = generate_questions()
+    st.session_state.user_answers = [None] * 5 # لتخزين إجابات الطالب
+    st.session_state.current_q = 0
+    st.session_state.start_time = time.time()
+    st.session_state.quiz_submitted = False
+
+# --- المنطق الزمني (Timer Logic) ---
+QUIZ_DURATION = 15 * 60 # 15 دقيقة بالثواني
+elapsed_time = time.time() - st.session_state.start_time
+time_left = QUIZ_DURATION - elapsed_time
+
+if time_left <= 0:
+    st.session_state.quiz_submitted = True
+    time_left = 0
+
+# --- الشريط الجانبي (المعلومات والمؤقت) ---
+with st.sidebar:
+    st.header("⏳ Quiz Info")
+    
+    # عرض المؤقت
+    mins, secs = divmod(int(time_left), 60)
+    timer_color = "red" if time_left < 60 else "#2c3e50"
+    st.markdown(f'<div class="timer-box" style="color:{timer_color}">{mins:02d}:{secs:02d}</div>', unsafe_allow_html=True)
+    
+    st.write(f"**Student:** Guest Student")
+    st.write("**Subject:** Calculus (Optimization)")
+    st.write("**Instructor:** Mr. Ibrahim Eldabour")
+    
+    if st.button("🔄 Restart Quiz (توليد أسئلة جديدة)"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.rerun()
+
+# --- الجسم الرئيسي (Header & Navigation) ---
+st.title("📝 اختبار القيم القصوى (Optimization Quiz)")
 st.markdown("---")
 
-# --- تصميم الصفحة (عمودين: نص ورسم) ---
-col1, col2 = st.columns([1, 1])
+if not st.session_state.quiz_submitted:
+    # أزرار التنقل في الأعلى
+    cols = st.columns(5)
+    for i in range(5):
+        # تمييز الزر النشط (السؤال الحالي) وتلوين الأزرار المجابة
+        btn_label = f"Q {i+1}"
+        is_answered = st.session_state.user_answers[i] is not None
+        if i == st.session_state.current_q:
+            cols[i].markdown(f"<button style='background-color:#2980b9; color:white; border:none; padding:10px; width:100%; border-radius:5px;'>{btn_label}</button>", unsafe_allow_html=True)
+        elif is_answered:
+            if cols[i].button(f"✅ {btn_label}", key=f"nav_{i}"):
+                st.session_state.current_q = i
+                st.rerun()
+        else:
+            if cols[i].button(btn_label, key=f"nav_{i}"):
+                st.session_state.current_q = i
+                st.rerun()
 
-with col1:
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- عرض السؤال الحالي ---
+    q_index = st.session_state.current_q
+    q_data = st.session_state.quiz_data[q_index]
+
+    # بطاقة السؤال
     st.markdown(f"""
-    <div class="question-container">
-        <div class="ar-text">{data['ar']}</div>
+    <div class="question-card">
+        <div class="ar-text">س{q_index+1}: {q_data['ar']}</div>
         <hr>
-        <div class="en-text">{data['en']}</div>
+        <div class="en-text">Q{q_index+1}: {q_data['en']}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # حقل الإدخال
+    # نستخدم قيمة افتراضية محفوظة إذا كان الطالب قد أجاب سابقاً
+    prev_ans = st.session_state.user_answers[q_index]
+    val = prev_ans if prev_ans is not None else 0.0
+    
+    user_input = st.number_input(
+        f"Enter Answer / أدخل الإجابة ({q_data['unit']}):", 
+        value=float(val), 
+        step=0.1, 
+        format="%.2f",
+        key=f"input_{q_index}"
+    )
+
+    # زر حفظ الإجابة والانتقال
+    col_prev, col_next = st.columns([1, 1])
+    
+    if col_next.button("Save & Next ➡️"):
+        st.session_state.user_answers[q_index] = user_input
+        if q_index < 4:
+            st.session_state.current_q += 1
+        st.rerun()
+
+    # زر الإنهاء
+    st.markdown("---")
+    if st.button("📤 Submit Quiz / تسليم الاختبار", type="primary"):
+        # حفظ الإجابة الحالية أولاً
+        st.session_state.user_answers[q_index] = user_input
+        st.session_state.quiz_submitted = True
+        st.rerun()
+
+else:
+    # --- شاشة النتائج (بعد التسليم أو انتهاء الوقت) ---
+    st.success("تم تسليم الاختبار بنجاح! | Quiz Submitted Successfully")
+    
+    score = 0
+    st.write("### تقرير النتيجة:")
+    
+    for i, q in enumerate(st.session_state.quiz_data):
+        user_ans = st.session_state.user_answers[i]
+        correct_ans = q['correct']
+        
+        # السماح بنسبة خطأ بسيطة في التقريب (Tolerance)
+        is_correct = False
+        if user_ans is not None:
+            if abs(user_ans - correct_ans) <= 0.2: # هامش خطأ بسيط
+                score += 1
+                is_correct = True
+        
+        # عرض حالة السؤال (بدون الإجابة الصحيحة)
+        status = "✅ Correct" if is_correct else "❌ Incorrect"
+        st.markdown(f"**Question {i+1}:** {status}")
+    
+    final_grade = (score / 5) * 100
+    st.markdown(f"""
+    <div style="background-color:#d4edda; padding:20px; border-radius:10px; text-align:center; border:2px solid #28a745;">
+        <h1 style="color:#155724; margin:0;">Your Score: {score} / 5</h1>
+        <h3 style="color:#155724;">Grade: {final_grade}%</h3>
     </div>
     """, unsafe_allow_html=True)
     
-    if st.checkbox("Show Final Answer / عرض الإجابة النهائية"):
-        st.success(data['answer'])
-
-    st.info("💡 Tip: Press `Ctrl + P` (or Cmd + P) to save this page as a PDF without the sidebar.")
-
-# --- دوال الرسم (Visualization) ---
-def plot_river_rect(perimeter):
-    fig, ax = plt.subplots(figsize=(6, 4))
-    
-    # النهر
-    ax.axhline(0, color='blue', linewidth=4, label='Stream (River)')
-    
-    # المستطيل المثالي (الحل)
-    # 2x + y = 1000 => x=250, y=500
-    opt_x = perimeter / 4
-    opt_y = perimeter / 2
-    
-    rect = patches.Rectangle((100, 0), opt_y, opt_x, linewidth=2, edgecolor='green', facecolor='#abebc6', label='Field')
-    ax.add_patch(rect)
-    
-    # التسميات
-    ax.text(100 + opt_y/2, opt_x + 20, f'Side y = {opt_y}', ha='center', fontsize=12, color='green')
-    ax.text(80, opt_x/2, f'x = {opt_x}', va='center', fontsize=12, color='green')
-    ax.text(100 + opt_y + 20, opt_x/2, f'x = {opt_x}', va='center', fontsize=12, color='green')
-    
-    ax.set_xlim(0, perimeter)
-    ax.set_ylim(-50, perimeter/2)
-    ax.set_aspect('equal')
-    ax.legend(loc='upper right')
-    ax.set_title(f"Optimization: Fence Length = {perimeter} ft")
-    ax.axis('off')
-    return fig
-
-def plot_rect_in_circle(radius):
-    fig, ax = plt.subplots(figsize=(5, 5))
-    
-    # الدائرة
-    circle = plt.Circle((0, 0), radius, color='blue', fill=False, linewidth=2, label=f'Circle r={radius}')
-    ax.add_patch(circle)
-    
-    # المستطيل (المربع هو الحل الأمثل)
-    side = radius * np.sqrt(2) # 14.14
-    rect = patches.Rectangle((-side/2, -side/2), side, side, linewidth=2, edgecolor='red', facecolor='#fadbd8', label='Max Area Rectangle')
-    ax.add_patch(rect)
-    
-    # رسم نصف القطر
-    ax.plot([0, side/2], [0, side/2], 'k--', label='Radius')
-    
-    ax.set_xlim(-radius-2, radius+2)
-    ax.set_ylim(-radius-2, radius+2)
-    ax.set_aspect('equal')
-    ax.legend(loc='upper right')
-    ax.set_title("Rectangle Inscribed in Circle")
-    ax.axis('off')
-    return fig
-
-def plot_wire_cut(length):
-    fig, ax = plt.subplots(figsize=(6, 2))
-    
-    # السلك كامل
-    ax.plot([0, length], [0, 0], 'k-', linewidth=3, label='Total Wire')
-    
-    # نقطة القطع (الحل a: الكل للدائرة)
-    # سنرسم تمثيل للدائرة والمربع
-    
-    circle_r = (length / (2*np.pi)) 
-    
-    # رسم الدائرة الناتجة
-    circle = plt.Circle((2, 0.5), 0.5, color='blue', fill=True, label='Circle Part')
-    ax.add_patch(circle)
-    ax.text(2, -0.5, "Circle Mode", ha='center')
-    
-    # رسم المربع (صغير جداً لأن الحل a يطلب تعظيم المساحة للدائرة)
-    rect = patches.Rectangle((8, 0), 1, 1, color='red', fill=True, label='Square Part')
-    ax.add_patch(rect)
-    ax.text(8.5, -0.5, "Square Mode", ha='center')
-
-    ax.set_xlim(-1, length+1)
-    ax.set_ylim(-1, 2)
-    ax.axis('off')
-    ax.set_title(f"Wire Length = {length} in")
-    return fig
-
-# --- عرض الرسم البياني ---
-with col2:
-    st.markdown("### 📊 Geometric Representation")
-    if data['type'] == "river_rect":
-        fig = plot_river_rect(data['constraint'])
-        st.pyplot(fig)
-    elif data['type'] == "rect_in_circle":
-        fig = plot_rect_in_circle(data['constraint'])
-        st.pyplot(fig)
-    elif data['type'] == "wire_cut":
-        fig = plot_wire_cut(data['constraint'])
-        st.pyplot(fig)
+    if final_grade == 100:
+        st.balloons()
