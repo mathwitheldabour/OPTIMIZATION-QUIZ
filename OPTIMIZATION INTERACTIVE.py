@@ -5,7 +5,7 @@ import time
 # --- إعدادات الصفحة ---
 st.set_page_config(page_title="Optimization Quiz | Mr. Ibrahim", layout="wide")
 
-# --- CSS: السحر الحقيقي هنا ---
+# --- CSS: الإصلاح الجذري للمعادلات والتنسيق ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
@@ -15,70 +15,85 @@ st.markdown("""
         font-family: 'Cairo', sans-serif;
     }
 
+    /* ----------------------------------------------------
+       FIX: إجبار المعادلات الرياضية أن تكون دائماً من اليسار لليمين
+       حتى لو كانت داخل نص عربي
+    ---------------------------------------------------- */
+    .katex, .katex-display {
+        direction: ltr !important;
+        unicode-bidi: isolate !important;
+        font-family: 'KaTeX_Main', 'Times New Roman', serif !important;
+        font-size: 1.1em !important; /* تكبير المعادلات قليلاً */
+    }
+
     /* حيلة العناوين للنص العربي (Header Hack) */
-    /* سنحول h5 إلى حاوية للنص العربي تدعم المعادلات */
     h5 {
         direction: rtl;
         text-align: right;
         font-family: 'Cairo', sans-serif;
         font-weight: 700;
-        font-size: 22px !important;
+        font-size: 24px !important; /* تكبير الخط العربي */
         color: #2c3e50;
         line-height: 1.8;
         padding-right: 15px;
-        border-right: 5px solid #2980b9;
-        margin-bottom: 0px;
+        border-right: 6px solid #2980b9;
+        margin-bottom: 15px;
     }
     
-    /* تنسيق النص الإنجليزي */
+    /* تنسيق النص الإنجليزي - تكبير وتوضيح */
     .en-text {
         text-align: left;
         direction: ltr;
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 18px;
-        color: #555;
+        font-family: 'Segoe UI', Arial, sans-serif; /* خط أوضح للإنجليزي */
+        font-size: 20px; /* تكبير الخط */
+        font-weight: 500;
+        color: #444;
         margin-top: 10px;
-        padding-left: 15px;
-        border-left: 5px solid #c0392b;
+        padding: 15px;
+        background-color: #f8f9fa; /* خلفية خفيفة جداً لتمييزه */
+        border-left: 6px solid #c0392b;
+        border-radius: 5px;
     }
 
     /* بطاقة السؤال */
     .question-card {
         background-color: #fff;
-        padding: 25px;
+        padding: 30px;
         border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        border: 1px solid #eee;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e1e1e1;
         margin-bottom: 25px;
     }
 
     /* تحسين أزرار الراديو */
     .stRadio label {
-        font-size: 20px !important;
-        background-color: #fcfcfc;
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid #e0e0e0;
-        margin-bottom: 8px;
+        font-size: 22px !important; /* تكبير الاختيارات */
+        background-color: #ffffff;
+        padding: 15px 20px;
+        border-radius: 10px;
+        border: 2px solid #eee;
+        margin-bottom: 10px;
         cursor: pointer;
         transition: all 0.2s;
-        display: block; /* جعل الخيار يأخذ السطر كاملاً */
-        direction: ltr; /* الأرقام والوحدات تظهر بشكل أفضل هكذا */
+        display: block;
+        direction: ltr; /* الاختيارات (أرقام) تكون من اليسار لليمين */
         text-align: left;
+        font-weight: bold;
+        color: #2c3e50;
     }
     .stRadio label:hover {
         border-color: #3498db;
-        background-color: #ebf5fb;
+        background-color: #f0f8ff;
     }
 
     /* المؤقت */
     .timer-box {
-        font-size: 26px; font-weight: bold; text-align: center;
-        padding: 12px; border: 3px solid #e74c3c; border-radius: 10px;
+        font-size: 30px; font-weight: 800; text-align: center;
+        padding: 15px; border: 3px solid #e74c3c; border-radius: 12px;
         color: #e74c3c; background: white;
     }
     
-    /* إخفاء روابط التثبيت بجوار العناوين */
+    /* إخفاء روابط التثبيت المزعجة */
     a.anchor-link { display: none; }
 </style>
 """, unsafe_allow_html=True)
@@ -101,20 +116,20 @@ def generate_questions():
     s_box = random.choice([12, 18, 24, 30])
     ans_box = s_box / 6
     questions.append({
-        # نستخدم النص الخام (raw string) r"" للمعادلات
-        "ar": fr"صفيحة مربعة الشكل طول ضلعها {s_box} cm. قُصت مربعات متطابقة من الأركان طول ضلعها $x$. أوجد قيمة $x$ التي تجعل حجم الصندوق $V$ أكبر ما يمكن.",
-        "en": fr"A square sheet of side {s_box} cm. Squares of side $x$ are cut from corners. Find $x$ that maximizes the Volume.",
+        # المعادلات مكتوبة بصيغة LaTeX بين علامات $
+        "ar": fr"صفيحة مربعة الشكل طول ضلعها ${s_box} \text{{ cm}}$. قُصت مربعات متطابقة من الأركان طول ضلعها $x$. أوجد قيمة $x$ التي تجعل حجم الصندوق $V$ أكبر ما يمكن.",
+        "en": fr"A square sheet of side ${s_box} \text{{ cm}}$. Squares of side $x$ are cut from corners. Find $x$ that maximizes the Volume $V$.",
         "correct": ans_box,
         "options": generate_distractors(ans_box, 1),
         "unit": "cm"
     })
 
-    # 2. Shortest Distance
+    # 2. Shortest Distance (تم تعديل المعادلة لتكون واضحة)
     k_val = random.choice([2, 3, 4, 5])
     ans_dist = k_val - 0.5
     questions.append({
         "ar": fr"أوجد الإحداثي السيني ($x$-coordinate) للنقطة الواقعة على المنحنى $y = \sqrt{{x}}$ والتي تكون أقرب ما يمكن للنقطة $({k_val}, 0)$.",
-        "en": fr"Find the x-coordinate on the curve $y = \sqrt{{x}}$ closest to the point $({k_val}, 0)$.",
+        "en": fr"Find the $x$-coordinate on the curve $y = \sqrt{{x}}$ that is closest to the point $({k_val}, 0)$.",
         "correct": ans_dist,
         "options": generate_distractors(ans_dist, 0.5),
         "unit": ""
@@ -124,8 +139,8 @@ def generate_questions():
     p_river = random.randrange(800, 1600, 200)
     ans_area = (p_river/4) * (p_river/2)
     questions.append({
-        "ar": fr"مزارع لديه {p_river} ft من السياج لإحاطة حقل مستطيل بجوار نهر (لا يحتاج سياج). أوجد أكبر مساحة ممكنة $A$.",
-        "en": fr"A farmer has {p_river} ft of fence next to a river. Find the maximum area.",
+        "ar": fr"مزارع لديه ${p_river} \text{{ ft}}$ من السياج لإحاطة حقل مستطيل بجوار نهر (لا يحتاج سياج). أوجد أكبر مساحة ممكنة $A$.",
+        "en": fr"A farmer has ${p_river} \text{{ ft}}$ of fence next to a river. Find the maximum area $A$.",
         "correct": ans_area,
         "options": generate_distractors(ans_area, 500),
         "unit": "ft²"
@@ -135,7 +150,7 @@ def generate_questions():
     r_circle = random.randint(6, 12)
     ans_rect = 2 * (r_circle**2)
     questions.append({
-        "ar": fr"أوجد أكبر مساحة لمستطيل يمكن رسمه داخل دائرة نصف قطرها $r = {r_circle}$ وحدات.",
+        "ar": fr"أوجد أكبر مساحة لمستطيل يمكن رسمه داخل دائرة نصف قطرها $r = {r_circle}$.",
         "en": fr"Find max area of a rectangle inscribed in a circle with radius $r = {r_circle}$.",
         "correct": ans_rect,
         "options": generate_distractors(ans_rect, 10),
@@ -147,8 +162,8 @@ def generate_questions():
     area = int(1.5 * base_u**2)
     cost = 12 * base_u
     questions.append({
-        "ar": fr"يراد تسييج منطقة مساحتها ${area} \text{{ ft}}^2$. تكلفة الجانبين المتقابلين $3 والآخرين $2. أوجد أقل تكلفة.",
-        "en": fr"Area is ${area} \text{{ ft}}^2$. Two sides cost $3, others $2. Find min cost.",
+        "ar": fr"يراد تسييج منطقة مساحتها ${area} \text{{ ft}}^2$. تكلفة الجانبين المتقابلين $3\$ والآخرين $2\$. أوجد أقل تكلفة.",
+        "en": fr"Area is ${area} \text{{ ft}}^2$. Two sides cost $3\$$, others $2\$$. Find min cost.",
         "correct": cost,
         "options": generate_distractors(cost, 20),
         "unit": "$"
@@ -206,14 +221,14 @@ if not st.session_state.submitted:
     q_idx = st.session_state.current_q
     q_data = st.session_state.quiz_data[q_idx]
 
-    # --- الحاوية الرئيسية للسؤال ---
+    # الحاوية الرئيسية
     with st.container():
         st.markdown('<div class="question-card">', unsafe_allow_html=True)
         
-        # الجزء العربي: نستخدم ##### (h5) الذي قمنا بتعديله في CSS ليدعم RTL والمعادلات
+        # العربي - المعادلات ستظهر الآن من اليسار لليمين بفضل CSS
         st.markdown(f"##### س{q_idx+1}: {q_data['ar']}")
         
-        # الجزء الإنجليزي: نستخدم HTML div عادي مع كلاس CSS
+        # الإنجليزي - خط أكبر وخلفية مميزة
         st.markdown(f"""
         <div class="en-text">
             <strong>Q{q_idx+1}:</strong> {q_data['en']}
@@ -223,6 +238,7 @@ if not st.session_state.submitted:
         st.markdown('</div>', unsafe_allow_html=True)
 
     # 3. الاختيارات
+    st.markdown("<br>", unsafe_allow_html=True)
     st.info("👇 Select the correct answer / اختر الإجابة الصحيحة:")
     
     opts = q_data['options']
